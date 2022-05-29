@@ -4,7 +4,6 @@
 //! pe8 is used as pandora LED_B.
 //! pe9 is used as pandora LED_G.
 //!
-#![deny(unsafe_code)]
 #![deny(warnings)]
 #![no_main]
 #![no_std]
@@ -52,9 +51,9 @@ fn main() -> ! {
     // TRY this alternate clock configuration (clocks run at nearly the maximum frequency)
     let clocks = rcc
         .cfgr
-        .sysclk(80.mhz())
-        .pclk1(80.mhz())
-        .pclk2(80.mhz())
+        .sysclk(80.MHz())
+        .pclk1(80.MHz())
+        .pclk2(80.MHz())
         .freeze(&mut flash.acr, &mut pwr);
 
     let mut gpioe = dp.GPIOE.split(&mut rcc.ahb2);
@@ -62,8 +61,8 @@ fn main() -> ! {
         .pe7
         .into_push_pull_output(&mut gpioe.moder, &mut gpioe.otyper);
     let mut led_b = gpioe
-    .pe8
-    .into_push_pull_output(&mut gpioe.moder, &mut gpioe.otyper);
+        .pe8
+        .into_push_pull_output(&mut gpioe.moder, &mut gpioe.otyper);
     let mut led_g = gpioe
         .pe9
         .into_push_pull_output(&mut gpioe.moder, &mut gpioe.otyper);
@@ -76,19 +75,19 @@ fn main() -> ! {
         let g:i32 = _BLINK_TAB[index][1];
         let b:i32 = _BLINK_TAB[index][2];
         if r == LED_ON {
-            led_r.set_high().ok();
+            led_r.set_high();
         }else{
-            led_r.set_low().ok();
+            led_r.set_low();
         }
         if g == LED_ON {
-            led_g.set_high().ok();
+            led_g.set_high();
         }else{
-            led_g.set_low().ok();
+            led_g.set_low();
         }
         if b == LED_ON {
-            led_b.set_high().ok();
+            led_b.set_high();
         }else{
-            led_b.set_low().ok();
+            led_b.set_low();
         }
 
         index = index + 1;
@@ -100,6 +99,6 @@ fn main() -> ! {
 }
 
 #[exception]
-fn HardFault(ef: &ExceptionFrame) -> ! {
+unsafe fn HardFault(ef: &ExceptionFrame) -> ! {
     panic!("{:#?}", ef);
 }
