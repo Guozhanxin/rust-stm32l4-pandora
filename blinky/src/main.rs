@@ -2,7 +2,6 @@
 //!
 //! pe7 is used as pandora LED.
 //!
-#![deny(unsafe_code)]
 #![deny(warnings)]
 #![no_main]
 #![no_std]
@@ -34,9 +33,9 @@ fn main() -> ! {
     // TRY this alternate clock configuration (clocks run at nearly the maximum frequency)
     let clocks = rcc
         .cfgr
-        .sysclk(80.mhz())
-        .pclk1(80.mhz())
-        .pclk2(80.mhz())
+        .sysclk(80.MHz())
+        .pclk1(80.MHz())
+        .pclk2(80.MHz())
         .freeze(&mut flash.acr, &mut pwr);
 
     let mut gpioe = dp.GPIOE.split(&mut rcc.ahb2);
@@ -47,16 +46,16 @@ fn main() -> ! {
     let mut timer = Delay::new(cp.SYST, clocks);
 
     loop {
-        led.set_low().ok();
+        led.set_low();
         timer.delay_ms(1000 as u32);
 
-        led.set_high().ok();
+        led.set_high();
         timer.delay_ms(1000 as u32);
     }
 
 }
 
 #[exception]
-fn HardFault(ef: &ExceptionFrame) -> ! {
+unsafe fn HardFault(ef: &ExceptionFrame) -> ! {
     panic!("{:#?}", ef);
 }
