@@ -88,70 +88,51 @@ fn main() -> ! {
     i2c.write_read(ICM20608_ADDR, &[ICM20608_WHO_AM_I_REG], &mut buffer).unwrap();
     let id: u8 = buffer[0];
     
-    writeln!(tx, "i2c20608 id: 0x{:X}\r\n", id).ok();
+    writeln!(tx, "icm20608 id: 0x{:X}\r\n", id).ok();
     if id == ICM20608D_WHO_AM_I {
-        writeln!(tx, "i2c20608 read id OK!\r\n").ok();
+        writeln!(tx, "icm20608 read id OK!\r\n").ok();
     }
 
     // open 3 accelerometers and 3 gyroscope
     const ICM20608_PWR_MGMT1_REG :u8 = 0x6B;
     const ICM20608_PWR_MGMT2_REG :u8 = 0x6C;
     
-    let mut buffer = [0u8; 1];
     i2c.write_read(ICM20608_ADDR, &[ICM20608_PWR_MGMT1_REG], &mut buffer).unwrap();
     let value: u8 = buffer[0];
-    writeln!(tx, "i2c20608 ICM20608_PWR_MGMT1_REG:0x{:X}\r", value).ok();
+    writeln!(tx, "icm20608 ICM20608_PWR_MGMT1_REG:0x{:X}\r", value).ok();
     let value:u8 = value | 0x04;
     i2c.write(ICM20608_ADDR, &[ICM20608_PWR_MGMT1_REG, value]).unwrap();
-    i2c.write_read(ICM20608_ADDR, &[ICM20608_PWR_MGMT1_REG], &mut buffer).unwrap();
-    let value: u8 = buffer[0];
-    writeln!(tx, "i2c20608 ICM20608_PWR_MGMT1_REG:0x{:X}\r", value).ok();
-
-    let mut buffer = [0u8; 1];
-    i2c.write_read(ICM20608_ADDR, &[ICM20608_PWR_MGMT2_REG], &mut buffer).unwrap();
-    let value: u8 = buffer[0];
-    writeln!(tx, "i2c20608 ICM20608_PWR_MGMT2_REG:0x{:X}\r", value).ok();
-
     i2c.write(ICM20608_ADDR, &[ICM20608_PWR_MGMT2_REG, 0]).unwrap();
-    let mut buffer = [0u8; 1];
-    i2c.write_read(ICM20608_ADDR, &[ICM20608_PWR_MGMT2_REG], &mut buffer).unwrap();
-    let value: u8 = buffer[0];
-    writeln!(tx, "i2c20608 ICM20608_PWR_MGMT2_REG:0x{:X}\r", value).ok();
     
     const ICM20608_GYRO_CONFIG_REG  :u8 = 0x1B;
     const ICM20608_ACCEL_CONFIG1_REG :u8 = 0x1C;
     const ICM20608_ACCEL_CONFIG2_REG :u8 = 0x1D;
 
-    let mut buffer = [0u8; 1];
+    // set gyro acce range
     i2c.write_read(ICM20608_ADDR, &[ICM20608_GYRO_CONFIG_REG], &mut buffer).unwrap();
     let value: u8 = buffer[0];
-    writeln!(tx, "i2c20608 ICM20608_GYRO_CONFIG_REG:0x{:X}\r", value).ok();
+    writeln!(tx, "icm20608 ICM20608_GYRO_CONFIG_REG:0x{:X}\r", value).ok();
     let value = value & 0xE7;
     i2c.write(ICM20608_ADDR, &[ICM20608_GYRO_CONFIG_REG, value]).unwrap();
 
-    let mut buffer = [0u8; 1];
     i2c.write_read(ICM20608_ADDR, &[ICM20608_ACCEL_CONFIG1_REG], &mut buffer).unwrap();
     let value: u8 = buffer[0];
-    writeln!(tx, "i2c20608 ICM20608_ACCEL_CONFIG1_REG:0x{:X}\r", value).ok();
+    writeln!(tx, "icm20608 ICM20608_ACCEL_CONFIG1_REG:0x{:X}\r", value).ok();
     let value = value & 0xE7;
     i2c.write(ICM20608_ADDR, &[ICM20608_ACCEL_CONFIG1_REG, value]).unwrap();
 
-    let mut buffer = [0u8; 1];
     i2c.write_read(ICM20608_ADDR, &[ICM20608_ACCEL_CONFIG2_REG], &mut buffer).unwrap();
     let value: u8 = buffer[0];
-    writeln!(tx, "i2c20608 ICM20608_ACCEL_CONFIG2_REG:0x{:X}\r", value).ok();
+    writeln!(tx, "icm20608 ICM20608_ACCEL_CONFIG2_REG:0x{:X}\r", value).ok();
     // let value = value & 0xE7;
     i2c.write(ICM20608_ADDR, &[ICM20608_ACCEL_CONFIG2_REG, 0]).unwrap();
 
-    let mut buffer = [0u8; 1];
+    // close sleep mode
     i2c.write_read(ICM20608_ADDR, &[ICM20608_PWR_MGMT1_REG], &mut buffer).unwrap();
     let value: u8 = buffer[0];
-    writeln!(tx, "i2c20608 ICM20608_PWR_MGMT1_REG:0x{:X}\r", value).ok();
+    writeln!(tx, "icm20608 ICM20608_PWR_MGMT1_REG:0x{:X}\r", value).ok();
     let value:u8 = value & 0xBF;
     i2c.write(ICM20608_ADDR, &[ICM20608_PWR_MGMT1_REG, value]).unwrap();
-    i2c.write_read(ICM20608_ADDR, &[ICM20608_PWR_MGMT1_REG], &mut buffer).unwrap();
-    let value: u8 = buffer[0];
-    writeln!(tx, "i2c20608 ICM20608_PWR_MGMT1_REG:0x{:X}\r", value).ok();
     
     // Get the delay provider.
     let mut timer = Delay::new(cp.SYST, clocks);
@@ -171,7 +152,7 @@ fn main() -> ! {
         let gyro_y: i16 = ((buffer[2] as u16) << 8 | buffer[3] as u16) as i16;
         let gyro_z: i16 = ((buffer[4] as u16) << 8 | buffer[5] as u16) as i16;
         
-        writeln!(tx, "i2c20608 acce_x:{:06},acce_y:{:06},acce_z:{:06},gyro_x:{:06},gyro_y:{:06},gyro_z:{:06}\r\r", acce_x, acce_y, acce_z, gyro_x,gyro_y,gyro_z).ok();
+        writeln!(tx, "icm20608 acce_x:{:06},acce_y:{:06},acce_z:{:06},gyro_x:{:06},gyro_y:{:06},gyro_z:{:06}\r\r", acce_x, acce_y, acce_z, gyro_x,gyro_y,gyro_z).ok();
 
         timer.delay_ms(300 as u32);
     }
