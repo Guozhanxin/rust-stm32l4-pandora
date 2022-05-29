@@ -1,6 +1,8 @@
-//! Test the serial interface
+//! Echo bytes over serial
 //!
-//! This example requires you to short (connect) the TX and RX pins.
+//! This assumes that serial TX is PA9 and RX is PA10. This is true for the
+//! pandora board in which these are connected to the ST-LINK virtual COM
+//! port.
 #![deny(unsafe_code)]
 #![deny(warnings)]
 #![no_main]
@@ -14,13 +16,12 @@ extern crate nb;
 extern crate panic_semihosting;
 
 extern crate stm32l4xx_hal as hal;
-// #[macro_use(block)]
-// extern crate nb;
 
 use crate::hal::prelude::*;
 use crate::hal::serial::{Config, Serial};
 use crate::rt::ExceptionFrame;
-// use cortex_m::asm;
+
+use core::fmt::Write;
 
 #[entry]
 fn main() -> ! {
@@ -31,7 +32,6 @@ fn main() -> ! {
     let mut pwr = p.PWR.constrain(&mut rcc.apb1r1);
 
     let mut gpioa = p.GPIOA.split(&mut rcc.ahb2);
-    // let mut gpiob = p.GPIOB.split(&mut rcc.ahb2);
 
     // clock configuration using the default settings (all clocks run at 8 MHz)
     // let clocks = rcc.cfgr.freeze(&mut flash.acr);
@@ -45,28 +45,24 @@ fn main() -> ! {
 
     // The Serial API is highly generic
     // TRY the commented out, different pin configurations
-    // let tx = gpioa.pa9.into_af7(&mut gpioa.moder, &mut gpioa.afrh);
-    let tx = gpioa.pa2.into_af7(&mut gpioa.moder, &mut gpioa.afrl);
-    // let tx = gpiob.pb6.into_af7(&mut gpiob.moder, &mut gpiob.afrl);
+    let tx = gpioa.pa9.into_af7(&mut gpioa.moder, &mut gpioa.afrh);
+    // let tx = gpioa.pa2.into_af7(&mut gpioa.moder, &mut gpioa.afrl);
 
-    // let rx = gpioa.pa10.into_af7(&mut gpioa.moder, &mut gpioa.afrh);
-    let rx = gpioa.pa3.into_af7(&mut gpioa.moder, &mut gpioa.afrl);
-    // let rx = gpiob.pb7.into_af7(&mut gpiob.moder, &mut gpiob.afrl);
+    let rx = gpioa.pa10.into_af7(&mut gpioa.moder, &mut gpioa.afrh);
+    // let rx = gpioa.pa3.into_af7(&mut gpioa.moder, &mut gpioa.afrl);
 
     // TRY using a different USART peripheral here
-    let serial = Serial::usart2(
-        p.USART2,
+    let serial = Serial::usart1(
+        p.USART1,
         (tx, rx),
         Config::default().baudrate(115_200.bps()),
         clocks,
-        &mut rcc.apb1r1,
+        &mut rcc.apb2,
     );
-
-    // serial.listen(serial::Event::Rxne);
     let (mut tx, mut rx) = serial.split();
 
     // core::fmt::Write is implemented for tx.
-    // writeln!(tx, "Hello, world!").unwrap();
+    writeln!(tx, "Hello, world!").unwrap();
 
     loop {
         // Echo what is received on the serial link.
