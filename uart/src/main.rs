@@ -1,9 +1,6 @@
-//! Echo bytes over serial
+//! Test the serial interface
 //!
-//! This assumes that serial TX is PA9 and RX is PA10. This is true for the
-//! pandora board in which these are connected to the ST-LINK virtual COM
-//! port.
-#![deny(unsafe_code)]
+//! This example requires you to short (connect) the TX and RX pins.
 #![deny(warnings)]
 #![no_main]
 #![no_std]
@@ -18,9 +15,8 @@ extern crate panic_semihosting;
 extern crate stm32l4xx_hal as hal;
 
 use crate::hal::prelude::*;
-use crate::hal::serial::{Config, Serial};
+use crate::hal::serial::Serial;
 use crate::rt::ExceptionFrame;
-
 use core::fmt::Write;
 
 #[entry]
@@ -38,27 +34,21 @@ fn main() -> ! {
     // TRY this alternate clock configuration (clocks run at nearly the maximum frequency)
     let clocks = rcc
         .cfgr
-        .sysclk(80.mhz())
-        .pclk1(80.mhz())
-        .pclk2(80.mhz())
+        .sysclk(80.MHz())
+        .pclk1(80.MHz())
+        .pclk2(80.MHz())
         .freeze(&mut flash.acr, &mut pwr);
 
     // The Serial API is highly generic
     // TRY the commented out, different pin configurations
-    let tx = gpioa.pa9.into_af7(&mut gpioa.moder, &mut gpioa.afrh);
-    // let tx = gpioa.pa2.into_af7(&mut gpioa.moder, &mut gpioa.afrl);
+    let tx = gpioa.pa9.into_alternate(&mut gpioa.moder, &mut gpioa.otyper, &mut gpioa.afrh);
+    // let tx = gpioa.pa2.into_alternate(&mut gpioa.moder, &mut gpioa.otyper, &mut gpioa.afrl);
 
-    let rx = gpioa.pa10.into_af7(&mut gpioa.moder, &mut gpioa.afrh);
-    // let rx = gpioa.pa3.into_af7(&mut gpioa.moder, &mut gpioa.afrl);
+    let rx = gpioa.pa10.into_alternate(&mut gpioa.moder, &mut gpioa.otyper, &mut gpioa.afrh);
+    // let rx = gpioa.pa3.into_alternate(&mut gpioa.moder, &mut gpioa.otyper, &mut gpioa.afrl);
 
     // TRY using a different USART peripheral here
-    let serial = Serial::usart1(
-        p.USART1,
-        (tx, rx),
-        Config::default().baudrate(115_200.bps()),
-        clocks,
-        &mut rcc.apb2,
-    );
+    let serial = Serial::usart1(p.USART1, (tx, rx), 115_200.bps(), clocks, &mut rcc.apb2);
     let (mut tx, mut rx) = serial.split();
 
     // core::fmt::Write is implemented for tx.
@@ -69,10 +59,9 @@ fn main() -> ! {
         let received = block!(rx.read()).unwrap();
         block!(tx.write(received)).ok();
     }
-
 }
 
 #[exception]
-fn HardFault(ef: &ExceptionFrame) -> ! {
+unsafe fn HardFault(ef: &ExceptionFrame) -> ! {
     panic!("{:#?}", ef);
 }
